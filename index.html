@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parte de controle × parte operativa — Suzim, cap. 4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --papel:#E9E9E3; --carta:#F5F4EF; --tinta:#16181C; --fraca:#6A6E73;
+    --metal:#1F4FA8; --difusao:#17705A; --poli:#A82B22; --marca:#F2E14C;
+    --linha:rgba(22,24,28,.16); --grade:rgba(31,79,168,.09);
+    --ui:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
+    --display:"IBM Plex Serif",Georgia,serif;
+    --dado:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--papel);
+    background-image:linear-gradient(var(--grade) 1px,transparent 1px),linear-gradient(90deg,var(--grade) 1px,transparent 1px);
+    background-size:28px 28px;
+    color:var(--tinta);font-family:var(--ui);line-height:1.45;padding:20px 16px 60px;
+  }
+  .folha{max-width:1180px;margin:0 auto}
+  header{border-top:3px solid var(--tinta);padding-top:10px}
+  .eyebrow{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--fraca);font-weight:600;margin:0}
+  .eyebrow b{color:var(--metal)}
+  h1{font-family:var(--display);font-weight:600;font-size:clamp(21px,3.2vw,31px);margin:.3em 0 .15em;line-height:1.15}
+  .sub{font-size:14.5px;color:var(--fraca);max-width:72ch;margin:0}
+  code{font-family:var(--dado);font-size:.92em;background:rgba(31,79,168,.09);padding:1px 5px}
+
+  .vistas{display:flex;flex-wrap:wrap;border:1.8px solid var(--tinta);margin:0;width:fit-content;max-width:100%}
+  .vistas button{border:0;border-right:1.8px solid var(--tinta);padding:12px 18px;background:#fff;font-family:var(--ui);
+    font-size:12.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;cursor:pointer;color:var(--tinta)}
+  .vistas button:last-child{border-right:0}
+  .vistas button:hover{background:var(--marca)}
+  .vistas button[aria-pressed="true"]{background:var(--tinta);color:#fff}
+  .vistas button#vPC[aria-pressed="true"]{background:var(--metal)}
+  .vistas button#vPO[aria-pressed="true"]{background:var(--difusao)}
+  .barra{display:grid;grid-template-columns:auto 1fr;gap:10px 22px;align-items:center;margin:18px 0 14px}
+  @media (max-width:820px){.barra{grid-template-columns:1fr}}
+  .explicaVista{font-size:13.5px;color:var(--fraca);max-width:64ch;margin:0}
+  .explicaVista b{color:var(--tinta)}
+
+  /* ---------- esquemático ---------- */
+  .esquema{background:var(--carta);border:1px solid var(--linha);padding:6px 8px;overflow-x:auto}
+  .esquema svg{display:block;width:100%;height:auto;min-width:720px}
+  .legenda{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:12.5px;color:var(--tinta);margin:10px 2px 0;font-weight:600}
+  .legenda i{display:inline-block;width:24px;height:0;border-top:4px solid;vertical-align:middle;margin-right:7px}
+  .legenda b{display:inline-block;width:16px;height:16px;border:1.5px solid var(--tinta);background:#fff;vertical-align:-3px;margin-right:7px}
+  .legenda .co{border-color:var(--metal)} .legenda .st{border-color:var(--poli)} .legenda .dado{border-color:var(--tinta)}
+
+  .reg rect.moldura{fill:#fff;stroke-dasharray:none}
+  .reg.pc rect.moldura{fill:rgba(31,79,168,.045);stroke:var(--metal);stroke-width:1.4}
+  .reg.po rect.moldura{fill:rgba(23,112,90,.05);stroke:var(--difusao);stroke-width:1.4}
+  .tituloReg{font-family:var(--ui);font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+  .tituloReg.pc{fill:var(--metal)} .tituloReg.po{fill:var(--difusao)}
+  .subReg{font-family:var(--ui);font-size:11px;fill:var(--fraca)}
+  .apagado{opacity:.12;filter:grayscale(1)}
+
+  .grafo circle{fill:#fff;stroke:var(--metal);stroke-width:1.7}
+  .grafo circle.ativo{fill:var(--marca);stroke:var(--tinta);stroke-width:3}
+  .grafo path{fill:none;stroke:var(--metal);stroke-width:1.4;opacity:.6}
+  text.est{font-family:var(--dado);font-size:13px;font-weight:600;fill:var(--tinta);text-anchor:middle}
+  text.lab{font-family:var(--dado);font-size:10.5px;fill:var(--fraca);text-anchor:middle}
+  text.pin{font-family:var(--dado);font-size:10.5px;fill:var(--fraca)}
+  text.nome{font-family:var(--ui);font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;fill:var(--tinta);text-anchor:middle}
+  text.big{font-family:var(--dado);font-size:17px;font-weight:600;fill:var(--tinta);text-anchor:middle}
+
+  .caixa{fill:#fff;stroke:var(--tinta);stroke-width:1.6}
+  .caixa.viva{fill:var(--marca)}
+  .porta{fill:#fff;stroke:var(--tinta);stroke-width:1.8}
+  .porta.viva{fill:var(--marca)}
+
+  .w{fill:none;stroke-width:1.6}
+  .w.co{stroke:var(--metal);opacity:.4}
+  .w.st{stroke:var(--poli);opacity:.4}
+  .w.dado{stroke:var(--tinta);opacity:.5}
+  .fio.on .w.co,.fio.on .w.st{opacity:1;stroke-width:3.2}
+  .fio.on .w.dado{opacity:1;stroke-width:3.2}
+  .fio.on .halo{opacity:.9}
+  .halo{fill:none;stroke:var(--marca);stroke-width:9;stroke-linecap:round;stroke-linejoin:round;opacity:0}
+  .rotFio{font-family:var(--dado);font-size:12px;font-weight:700;fill:var(--metal);opacity:.75;text-anchor:middle}
+  .chip{fill:var(--carta);stroke:var(--metal);stroke-width:1.1;opacity:.75}
+  .fio.on .chip{opacity:1;fill:var(--marca);stroke:var(--tinta)}
+  .passo{font-family:var(--dado);font-size:10.5px;fill:var(--tinta)}
+  .marcaPasso{fill:var(--marca)}
+  .valor.indef{opacity:.35}
+  .fio.on .rotFio{opacity:1}
+  .rotFio.st{fill:var(--poli);text-anchor:start}
+
+  .lampada rect{fill:#fff;stroke:var(--tinta);stroke-width:1.5}
+  .lampada text{font-family:var(--dado);font-size:12px;font-weight:600;fill:var(--tinta);text-anchor:middle}
+  .fio.on .lampada rect{fill:var(--tinta)}
+  .fio.on .lampada text{fill:#fff}
+  .valor rect{fill:#fff;stroke:var(--fraca);stroke-width:1.1}
+  .valor text{font-family:var(--dado);font-size:11.5px;font-weight:600;fill:var(--tinta);text-anchor:middle}
+  .divisa{stroke:var(--tinta);stroke-width:2;stroke-dasharray:7 6;opacity:.75}
+  .divisaRot{font-family:var(--ui);font-size:10.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;fill:var(--fraca);text-anchor:middle}
+  @media (prefers-reduced-motion:no-preference){
+    .w,.halo,.caixa,.porta,.lampada rect{transition:opacity .16s linear,stroke-width .16s linear,fill .16s linear}
+  }
+
+  /* ---------- cartões ---------- */
+  .cartoes{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  @media (max-width:820px){.cartoes{grid-template-columns:1fr}}
+  .territorio{background:var(--carta);border:1px solid var(--linha);padding:13px 15px 16px}
+  .territorio.pc{border-top:5px solid var(--metal)}
+  .territorio.po{border-top:5px solid var(--difusao)}
+  .territorio.esmaecido{opacity:.3}
+  .tit{font-size:11px;letter-spacing:.15em;text-transform:uppercase;font-weight:700;margin:0 0 8px}
+  .tit.pc{color:var(--metal)} .tit.po{color:var(--difusao)}
+  .val{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end}
+  .val div{min-width:56px}
+  .val dt{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fraca);font-weight:700}
+  .val dd{margin:0;font-family:var(--dado);font-size:23px;font-weight:600;line-height:1.1}
+  .val dd.po{color:var(--difusao)} .val dd.st{color:var(--poli)} .val dd.pc{color:var(--metal)} .val dd.q{color:var(--fraca)}
+  .sabe{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--linha);border:1px solid var(--linha);margin:12px 0 0;font-size:12px}
+  .sabe div{background:var(--carta);padding:8px 10px}
+  .sabe dt{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fraca);font-weight:700;margin-bottom:3px}
+  .sabe .nao{color:var(--poli)}
+  .bits{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+  .bit{font-family:var(--dado);font-size:13px;font-weight:600;width:34px;padding:5px 0;text-align:center;background:#fff;border:1.3px solid var(--tinta);cursor:pointer;color:var(--tinta)}
+  .bit small{display:block;font-size:8.5px;color:var(--fraca);font-weight:500}
+  .bit[aria-pressed="true"]{background:var(--tinta);color:#fff}
+  .bit[aria-pressed="true"] small{color:rgba(255,255,255,.6)}
+  .bit.lendo{outline:3px solid var(--marca);outline-offset:1px}
+  .resultado{display:none;align-items:baseline;gap:14px;flex-wrap:wrap;background:var(--marca);
+    border:1.7px solid var(--tinta);padding:11px 15px;margin-top:16px;font-size:14px}
+  .resultado.ver{display:flex}
+  .resultado b{font-family:var(--dado);font-size:17px}
+  .resultado span{color:#4a4436}
+  .capBits{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--fraca);font-weight:700;margin:12px 0 0}
+  .aviso{border-left:4px solid var(--poli);background:#fff;padding:10px 12px;margin-top:12px;font-size:13px}
+  .aviso b{color:var(--poli)}
+  .cmdManual{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .cmdManual button{font-family:var(--dado);font-size:13px;font-weight:600;padding:9px 11px;border:1.6px solid var(--difusao);background:#fff;cursor:pointer;color:var(--tinta)}
+  .cmdManual button:hover{background:var(--marca)}
+
+  /* ---------- controles ---------- */
+  .controles{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:16px}
+  button.acao{font-family:var(--ui);font-size:12.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    padding:11px 16px;border:1.7px solid var(--tinta);background:#fff;cursor:pointer;color:var(--tinta)}
+  button.acao:hover{background:var(--marca)}
+  button.acao.primario{background:var(--tinta);color:#fff}
+  button.acao.primario:hover{background:var(--metal);border-color:var(--metal)}
+  button.acao:disabled{opacity:.32;cursor:not-allowed;background:#fff}
+  .mini{display:flex;border:1.7px solid var(--tinta)}
+  .mini button{border:0;border-right:1.7px solid var(--tinta);padding:11px 13px;background:#fff;font-family:var(--ui);
+    font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;color:var(--tinta)}
+  .mini button:last-child{border-right:0}
+  .mini button[aria-pressed="true"]{background:var(--metal);color:#fff}
+  label.n{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--fraca);display:flex;align-items:center;gap:6px}
+  select{font-family:var(--dado);font-size:14px;padding:9px 10px;border:1.7px solid var(--tinta);background:#fff}
+  button:focus-visible,.bit:focus-visible,select:focus-visible{outline:3px solid var(--metal);outline-offset:2px}
+
+  .diario{margin-top:20px;border:1px solid var(--linha);background:var(--carta)}
+  .diario .cab{display:grid;grid-template-columns:74px 1fr 1fr;background:var(--tinta);color:#fff}
+  .diario .cab span{padding:7px 10px;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:700}
+  .diario .cab span:nth-child(2){color:#9DB9E8} .diario .cab span:nth-child(3){color:#8FD3BE}
+  .linhaLog{display:grid;grid-template-columns:74px 1fr 1fr;border-bottom:1px solid var(--linha);font-size:13px}
+  .linhaLog>*{padding:8px 10px}
+  .linhaLog .c{font-family:var(--dado);color:var(--fraca);font-weight:600}
+  .linhaLog .a{border-left:3px solid var(--metal)}
+  .linhaLog .b{border-left:3px solid var(--difusao);font-family:var(--dado);font-size:12.5px}
+  .linhaLog:first-child{background:var(--marca)}
+  .vazio{padding:14px;font-size:13px;color:var(--fraca);margin:0}
+
+  details{margin-top:20px;border:1px solid var(--linha);background:var(--carta);padding:12px 16px}
+  summary{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--fraca);cursor:pointer}
+  table{width:100%;border-collapse:collapse;font-family:var(--dado);font-size:12.5px;margin-top:10px}
+  th{font-family:var(--ui);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fraca);text-align:left;padding:6px 8px;border-bottom:1.6px solid var(--tinta);white-space:nowrap}
+  td{padding:6px 8px;border-bottom:1px solid var(--linha)}
+  tr.ativa td{background:var(--marca);font-weight:600}
+  .custo{display:flex;gap:22px;flex-wrap:wrap;margin-top:12px}
+  .custo div{border-left:3px solid var(--linha);padding-left:10px}
+  .custo div.escolhido{border-left-color:var(--metal)}
+  .custo b{font-family:var(--dado);font-size:20px;display:block;line-height:1.2}
+  .custo span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--fraca);font-weight:700}
+  footer{margin-top:24px;border-top:1px solid var(--linha);padding-top:12px;font-size:12.5px;color:var(--fraca);max-width:80ch}
+  footer b{color:var(--tinta)}
+  kbd{font-family:var(--dado);font-size:11px;border:1px solid var(--linha);padding:1px 5px;background:#fff}
+</style>
+</head>
+<body>
+<div class="folha">
+
+<header>
+  <p class="eyebrow"><b>Suzim, 1989 — cap. 4</b><span>Arquitetura alvo</span><span>Modelo PO–PC</span></p>
+  <h1>Dois blocos que não sabem o que o outro faz</h1>
+  <p class="sub">O laço <code>Z := TRUE; for i := 1 to n do Z := Z AND xi</code> desenhado por inteiro: o autômato à esquerda, as portas lógicas à direita, e no meio os cinco únicos fios que atravessam a fronteira.</p>
+</header>
+
+<div class="barra">
+<div class="vistas" role="group" aria-label="O que mostrar">
+  <button id="vPC" aria-pressed="false">Só a parte de controle</button>
+  <button id="vPO" aria-pressed="false">Só a parte operativa</button>
+  <button id="vTudo" aria-pressed="true">Os dois juntos</button>
+</div>
+<p class="explicaVista" id="explicaVista"></p>
+</div>
+
+<div class="esquema">
+<svg viewBox="0 0 1000 500" role="img" aria-label="Esquemático da parte de controle e da parte operativa">
+  <defs>
+    <marker id="aM" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1F4FA8"/></marker>
+    <marker id="aP" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#A82B22"/></marker>
+    <marker id="aT" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#16181C"/></marker>
+  </defs>
+
+  <!-- PARTE DE CONTROLE -->
+  <g id="grpPC" class="reg pc">
+    <rect class="moldura" x="10" y="20" width="400" height="420"/>
+    <text class="tituloReg pc" x="26" y="44">Parte de controle · PC</text>
+    <text class="subReg" x="26" y="61">decide QUANDO · sequencia e emite comandos</text>
+
+    <!-- grafo 5 estados -->
+    <g class="grafo" id="grafo5">
+      <path d="M42,108 A17,17 0 1,1 68,108" marker-end="url(#aM)"/>
+      <text class="lab" x="55" y="83">espera start</text>
+      <path d="M74,125 H107" marker-end="url(#aM)"/>
+      <path d="M149,125 H182" marker-end="url(#aM)"/>
+      <path d="M224,125 H257" marker-end="url(#aM)"/>
+      <path d="M299,125 H332" marker-end="url(#aM)"/>
+      <text class="lab" x="317" y="116">i≤n</text>
+      <path d="M355,106 A42,26 0 0,0 284,107" marker-end="url(#aM)"/>
+      <path d="M280,144 A110,42 0 0,1 59,144" marker-end="url(#aM)"/>
+      <text class="lab" x="167" y="199">i&gt;n · volta ao repouso</text>
+      <path class="w co" style="opacity:.7" d="M16,125 H32" marker-end="url(#aM)"/>
+      <text class="pin" x="14" y="108">start</text>
+      <circle id="e5_1" cx="55" cy="125" r="19"/><text class="est" x="55" y="130">E1</text>
+      <circle id="e5_2" cx="130" cy="125" r="19"/><text class="est" x="130" y="130">E2</text>
+      <circle id="e5_3" cx="205" cy="125" r="19"/><text class="est" x="205" y="130">E3</text>
+      <circle id="e5_4" cx="280" cy="125" r="19"/><text class="est" x="280" y="130">E4</text>
+      <circle id="e5_5" cx="355" cy="125" r="19"/><text class="est" x="355" y="130">E5</text>
+    </g>
+
+    <!-- grafo 3 estados -->
+    <g class="grafo" id="grafo3" style="display:none">
+      <path d="M82,108 A17,17 0 1,1 108,108" marker-end="url(#aM)"/>
+      <text class="lab" x="95" y="83">espera start</text>
+      <path d="M114,125 H182" marker-end="url(#aM)"/>
+      <path d="M224,125 H292" marker-end="url(#aM)"/>
+      <path d="M302,108 A17,17 0 1,1 328,108" marker-end="url(#aM)"/>
+      <text class="lab" x="315" y="83">i≤n</text>
+      <path d="M315,144 A115,42 0 0,1 99,144" marker-end="url(#aM)"/>
+      <text class="lab" x="205" y="199">i&gt;n · volta ao repouso</text>
+      <path class="w co" style="opacity:.7" d="M16,125 H72" marker-end="url(#aM)"/>
+      <text class="pin" x="14" y="108">start</text>
+      <circle id="e3_1" cx="95" cy="125" r="19"/><text class="est" x="95" y="130">E1</text>
+      <circle id="e3_2" cx="205" cy="125" r="19"/><text class="est" x="205" y="130">E2</text>
+      <circle id="e3_3" cx="315" cy="125" r="19"/><text class="est" x="315" y="130">E3</text>
+    </g>
+
+    <path class="w co" style="opacity:.7" d="M205,207 V218" marker-end="url(#aM)"/>
+    <rect class="caixa" x="45" y="222" width="330" height="72"/>
+    <text class="nome" x="210" y="248">Lógica de comando</text>
+    <text class="lab" x="210" y="270">estado presente → C1 · C2 · C3 · C4</text>
+    <path class="w co" style="opacity:.7" d="M45,282 H22" marker-end="url(#aM)"/>
+    <text class="pin" x="100" y="311">passos do algoritmo</text>
+    <rect class="caixa" x="100" y="316" width="275" height="120" style="stroke-width:1.2"/>
+    <g id="passos5">
+      <rect id="marca5" class="marcaPasso" x="104" y="326" width="267" height="18"/>
+      <text class="passo" x="112" y="340">1 · espera start</text>
+      <text class="passo" x="112" y="360">2 · Z := TRUE</text>
+      <text class="passo" x="112" y="380">3 · i := 1</text>
+      <text class="passo" x="112" y="400">4 · testa i&gt;n · Z := Z AND xi</text>
+      <text class="passo" x="112" y="420">5 · incrementa i</text>
+    </g>
+    <g id="passos3" style="display:none">
+      <rect id="marca3" class="marcaPasso" x="104" y="341" width="267" height="18"/>
+      <text class="passo" x="112" y="355">1 · espera start</text>
+      <text class="passo" x="112" y="380">2 · Z := TRUE ‖ i := 1</text>
+      <text class="passo" x="112" y="405">3 · testa i&gt;n · E ‖ inc i</text>
+    </g>
+    <text class="pin" x="20" y="274">Ready</text>
+    <text class="pin" id="txtReady" x="20" y="296">= 1</text>
+  </g>
+
+  <!-- PARTE OPERATIVA -->
+  <g id="grpPO">
+    <g class="reg po">
+      <rect class="moldura" x="460" y="40" width="530" height="210"/>
+      <text class="tituloReg po" x="476" y="62">Parte operativa 1 · dado Z</text>
+    </g>
+    <g class="reg po">
+      <rect class="moldura" x="460" y="280" width="530" height="160"/>
+      <text class="tituloReg po" x="476" y="302">Parte operativa 2 · índice i</text>
+    </g>
+
+    <!-- PO-1: porta E + flip-flop -->
+    <g id="dadoZ" class="fio">
+      <path class="halo" d="M470,130 H580"/>
+      <path class="w dado" d="M470,130 H576" marker-end="url(#aT)"/>
+      <path class="halo" d="M630,148 H665 V140 H700"/>
+      <path class="w dado" d="M630,148 H665 V140 H696" marker-end="url(#aT)"/>
+      <path class="halo" d="M812,140 V244 H545 V166 H580"/>
+      <path class="w dado" d="M812,140 V244 H545 V166 H576" marker-end="url(#aT)"/>
+    </g>
+    <circle cx="470" cy="130" r="3.5" fill="#16181C"/>
+    <text class="pin" x="472" y="122">xi</text>
+    <g class="valor"><rect id="bXi" x="514" y="121" width="24" height="18"/><text id="vXi" x="526" y="135">—</text></g>
+    <text class="pin" x="566" y="240">realimentação de Q</text>
+
+    <path id="gAnd" class="porta" d="M580,118 H602 A30,30 0 0,1 602,178 H580 Z"/>
+    <text class="nome" x="600" y="153" style="font-size:11px">E</text>
+    <g class="valor"><rect id="bAnd" x="654" y="122" width="24" height="18"/><text id="vAnd" x="666" y="136">—</text></g>
+
+    <rect id="gFF" class="caixa" x="700" y="110" width="92" height="100"/>
+    <text class="pin" x="706" y="144">D</text>
+    <text class="pin" x="706" y="184">LD</text>
+    <text class="pin" x="740" y="126">SET</text>
+    <text class="big" x="752" y="170">Z</text>
+    <text class="pin" x="775" y="144">Q</text>
+    <path d="M700,192 L712,199 L700,206 Z" fill="none" stroke="#16181C" stroke-width="1.3"/>
+    <text class="pin" x="716" y="204">clk</text>
+    <circle cx="812" cy="140" r="3.5" fill="#16181C"/>
+    <path class="w dado" style="opacity:.6" d="M792,140 H812" />
+    <path class="w dado" style="opacity:.6" d="M812,140 H952" marker-end="url(#aT)"/>
+    <g class="valor"><rect id="bQ" x="886" y="122" width="24" height="18"/><text id="vQ" x="898" y="136">—</text></g>
+    <text class="pin" x="930" y="132">Z</text>
+
+    <!-- PO-2: contador + comparador -->
+    <rect id="gCont" class="caixa" x="560" y="330" width="120" height="90"/>
+    <text class="nome" x="620" y="352" style="font-size:11px">Contador</text>
+    <text class="pin" x="566" y="372">INC</text>
+    <text class="pin" x="566" y="414">LD</text>
+    <text class="big" x="640" y="392">i</text>
+    <path class="w dado" style="opacity:.6" d="M680,375 H736 V355 H776" marker-end="url(#aT)"/>
+    <g class="valor"><rect id="bI" x="694" y="366" width="24" height="18"/><text id="vI" x="706" y="380">—</text></g>
+
+    <rect x="790" y="296" width="110" height="26" class="caixa" style="stroke-width:1.2"/>
+    <text class="lab" id="vN" x="845" y="314">n = 6</text>
+    <path class="w dado" style="opacity:.6" d="M845,322 V326" marker-end="url(#aT)"/>
+    <rect id="gComp" class="caixa" x="780" y="330" width="110" height="90"/>
+    <text class="nome" x="835" y="356" style="font-size:11px">Comparador</text>
+    <text class="big" x="835" y="392">i &gt; n</text>
+  </g>
+
+  <!-- FRONTEIRA E FIOS -->
+  <line class="divisa" x1="430" y1="14" x2="430" y2="486"/>
+  <text class="divisaRot" x="430" y="497">fronteira</text>
+
+  <g class="fio" id="w-C1">
+    <path class="halo" d="M375,238 H396 V88 H746 V106"/>
+    <path class="w co" d="M375,238 H396 V88 H746 V102" marker-end="url(#aM)"/>
+    <rect class="chip" x="411" y="57" width="38" height="17" rx="2"/><text class="rotFio" x="430" y="70">C1</text>
+    <g class="lampada"><rect x="419" y="77" width="22" height="22"/><text id="lampC1" x="430" y="93">0</text></g>
+  </g>
+  <g class="fio" id="w-C3">
+    <path class="halo" d="M375,252 H388 V228 H690 V180 H700"/>
+    <path class="w co" d="M375,252 H388 V228 H690 V180 H696" marker-end="url(#aM)"/>
+    <rect class="chip" x="411" y="197" width="38" height="17" rx="2"/><text class="rotFio" x="430" y="210">C3</text>
+    <g class="lampada"><rect x="419" y="217" width="22" height="22"/><text id="lampC3" x="430" y="233">0</text></g>
+  </g>
+  <g class="fio" id="w-C2">
+    <path class="halo" d="M375,266 H388 V368 H560"/>
+    <path class="w co" d="M375,266 H388 V368 H556" marker-end="url(#aM)"/>
+    <rect class="chip" x="411" y="337" width="38" height="17" rx="2"/><text class="rotFio" x="430" y="350">C2</text>
+    <g class="lampada"><rect x="419" y="357" width="22" height="22"/><text id="lampC2" x="430" y="373">0</text></g>
+  </g>
+  <g class="fio" id="w-C4">
+    <path class="halo" d="M375,280 H396 V416 H560"/>
+    <path class="w co" d="M375,280 H396 V416 H556" marker-end="url(#aM)"/>
+    <rect class="chip" x="411" y="385" width="38" height="17" rx="2"/><text class="rotFio" x="430" y="398">C4</text>
+    <g class="lampada"><rect x="419" y="405" width="22" height="22"/><text id="lampC4" x="430" y="421">0</text></g>
+  </g>
+  <g class="fio" id="w-S">
+    <path class="halo" d="M890,375 H944 V466 H70 V294"/>
+    <path class="w st" d="M890,375 H944 V466 H70 V298" marker-end="url(#aP)"/>
+    <text class="rotFio st" x="448" y="458">St · S = (i &gt; n)</text>
+    <g class="lampada"><rect x="419" y="455" width="22" height="22"/><text id="lampS" x="430" y="471">?</text></g>
+  </g>
+</svg>
+</div>
+
+<div class="legenda">
+  <span><i class="co"></i>Co · comandos que descem do controle</span>
+  <span><i class="st"></i>St · condição que sobe da operativa</span>
+  <span><i class="dado"></i>caminho de dados, dentro da operativa</span>
+  <span><b></b>bit que atravessa a fronteira neste ciclo</span>
+</div>
+
+<div class="cartoes">
+  <section class="territorio pc" id="cardPC">
+    <p class="tit pc">Parte de controle</p>
+    <div class="val">
+      <div><dt>Estado</dt><dd id="lEstado" style="color:#1F4FA8">E1</dd></div>
+      <div><dt>Ciclos</dt><dd id="lCiclos">0</dd></div>
+      <div><dt>Ready</dt><dd id="lReady" class="pc">1</dd></div>
+    </div>
+    <dl class="sabe">
+      <div><dt>Ela sabe</dt>a ordem dos passos e o bit de condição que chega de fora</div>
+      <div><dt class="nao">Ela não sabe</dt><span class="nao">o que C1 significa, quanto vale Z, nem a largura da palavra</span></div>
+    </dl>
+    <div id="avisoPC"></div>
+  </section>
+
+  <section class="territorio po" id="cardPO">
+    <p class="tit po">Parte operativa</p>
+    <div class="val">
+      <div><dt>Flip-flop Z</dt><dd id="lZ" class="q">—</dd></div>
+      <div><dt>Contador i</dt><dd id="lI" class="q">—</dd></div>
+      <div><dt>Condição S</dt><dd id="lS" class="q">—</dd></div>
+    </div>
+    <p class="capBits">entradas xi · clique para trocar 0 e 1</p>
+    <div class="bits" id="bits"></div>
+    <dl class="sabe">
+      <div><dt>Ela sabe</dt>como zerar, incrementar, comparar e fazer o E</div>
+      <div><dt class="nao">Ela não sabe</dt><span class="nao">em que ordem, quantas vezes, nem quando parar</span></div>
+    </dl>
+    <div id="avisoPO"></div>
+    <div class="cmdManual" id="cmdManual" style="display:none">
+      <button data-c="C1">aplicar C1</button>
+      <button data-c="C2">aplicar C2</button>
+      <button data-c="C3">aplicar C3</button>
+      <button data-c="C4">aplicar C4</button>
+    </div>
+  </section>
+</div>
+
+<div class="resultado" id="resultado"></div>
+
+<div class="controles" id="controles">
+  <div class="mini" role="group" aria-label="Versão do controle">
+    <button id="btn5" aria-pressed="true">5 estados</button>
+    <button id="btn3" aria-pressed="false">3 estados · ações em paralelo</button>
+  </div>
+  <button class="acao primario" id="btnStart">Pulso de start</button>
+  <button class="acao" id="btnPasso">Passo · 1 relógio</button>
+  <button class="acao" id="btnAuto">Rodar</button>
+  <button class="acao" id="btnReset">Zerar</button>
+  <label class="n">n = <select id="selN"></select></label>
+</div>
+
+<div class="diario">
+  <div class="cab"><span>Ciclo</span><span>A parte de controle…</span><span>A parte operativa…</span></div>
+  <div id="log"><p class="vazio">Dê um pulso de start e depois avance de relógio em relógio.</p></div>
+</div>
+
+<details>
+  <summary>Tabela da máquina sequencial · figura 4.1 — e o custo em ciclos</summary>
+  <table>
+    <thead><tr><th>Estado presente</th><th>Condição</th><th>Próximo estado</th><th>Operação</th><th>Saída</th><th>Comando</th></tr></thead>
+    <tbody id="corpoTabela"></tbody>
+  </table>
+  <div class="custo">
+    <div id="custo5"><span>5 estados · 2n+3</span><b id="c5">15</b></div>
+    <div id="custo3"><span>3 estados · n+2</span><b id="c3">8</b></div>
+  </div>
+</details>
+
+<footer>
+  <b>Como ler o esquemático.</b> C1 chega no SET do flip-flop; C3 chega no LD e carrega o resultado da porta E; C4 carrega 1 no contador e C2 o incrementa. A saída Q realimenta a própria porta E — é o <code>Z</code> do lado direito de <code>Z := Z AND xi</code>.<br>
+  <b>Rótulos dos comandos.</b> Seguimos as figuras 4.1 e 4.2 da apostila: C2 = inc i, C4 = i := 1. O texto corrido do item 4.1 inverte esses dois rótulos ao explicar c2 e c4.<br>
+  <b>Atalhos.</b> <kbd>espaço</kbd> avança um relógio, <kbd>R</kbd> zera, <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> trocam a vista.
+</footer>
+</div>
+
+<script>
+const E = id => document.getElementById(id);
+const S = {vista:'tudo',modo:'5',estado:1,i:null,z:null,n:6,x:[],ciclos:0,ready:true,cmds:[],log:[],auto:null,fim:false,start:false,travado:false};
+
+const TEXTO_VISTA = {
+  pc:'<b>Parte de controle isolada.</b> Ela sequencia sozinha até precisar de uma decisão. Aí trava: o bit S nasce no comparador, do outro lado da fronteira. Repare que os fios de comando continuam acendendo — e terminam em nada.',
+  po:'<b>Parte operativa isolada.</b> Aplique os comandos na mão, na ordem que quiser. As portas obedecem a tudo, inclusive a sequências sem sentido, como incrementar um contador que nunca foi carregado. Quem dá ordem é o controle.',
+  tudo:'<b>Sistema completo.</b> A cada relógio o controle escolhe um passo e ativa fios de comando; as portas executam e o comparador devolve uma condição. Só cinco fios cruzam a fronteira, seja qual for o tamanho do problema.'
+};
+
+const TAB5=[
+ {id:'1s',e:'1 (inicial)',c:'start',p:'2',o:'—',s:'Ready',cmd:'—'},
+ {id:'1n',e:'1 (inicial)',c:'não start',p:'1',o:'—',s:'Ready',cmd:'—'},
+ {id:'2', e:'2',c:'—',p:'3',o:'Z := TRUE',s:'not Ready',cmd:'C1'},
+ {id:'3', e:'3',c:'—',p:'4',o:'i := 1',s:'not Ready',cmd:'C4'},
+ {id:'4s',e:'4',c:'i > n',p:'1',o:'—',s:'not Ready',cmd:'—'},
+ {id:'4n',e:'4',c:'i ≤ n',p:'5',o:'Z := Z AND xi',s:'not Ready',cmd:'C3'},
+ {id:'5', e:'5',c:'—',p:'4',o:'inc i',s:'not Ready',cmd:'C2'}];
+const TAB3=[
+ {id:'1s',e:'1 (inicial)',c:'start',p:'2',o:'—',s:'Ready',cmd:'—'},
+ {id:'1n',e:'1 (inicial)',c:'não start',p:'1',o:'—',s:'Ready',cmd:'—'},
+ {id:'2', e:'2',c:'—',p:'3',o:'Z := TRUE ‖ i := 1',s:'not Ready',cmd:'C1 + C4'},
+ {id:'3s',e:'3',c:'i > n',p:'1',o:'—',s:'not Ready',cmd:'—'},
+ {id:'3n',e:'3',c:'i ≤ n',p:'3',o:'Z := Z AND xi ‖ inc i',s:'not Ready',cmd:'C3 + C2'}];
+
+function registrar(c,pc,po){ S.log.unshift({c:c,pc:pc,po:po}); if(S.log.length>6) S.log.pop(); }
+function pararAuto(){ if(S.auto){clearInterval(S.auto);S.auto=null;E('btnAuto').textContent='Rodar';} }
+function travar(){ S.travado=true; S.cmds=[]; pararAuto(); registrar(S.ciclos,'precisa decidir e pede o bit S','ausente — o comparador está do outro lado'); render(); }
+
+function passo(){
+  if(S.vista==='po') return;
+  let cmds=[], pc='', po='';
+  const semPO = S.vista==='pc';
+  const sBit = S.i!==null && S.i>S.n;
+
+  if(S.estado===1){
+    if(!S.start){ registrar('—','fica em E1 esperando o pulso de start','parada'); render(); return; }
+    S.start=false; S.ready=false; S.estado=2; S.ciclos=0; S.fim=false; S.travado=false; S.cmds=[];
+    registrar('—','viu start = 1 e vai para E2','nada a fazer neste ciclo'); render(); return;
+  }
+
+  if(S.modo==='5'){
+    if(S.estado===2){ cmds=['C1']; if(!semPO) S.z=1; pc='em E2, emite C1 e vai para E3'; po='C1 no SET → Z = 1'; S.estado=3; S.ciclos++; }
+    else if(S.estado===3){ cmds=['C4']; if(!semPO) S.i=1; pc='em E3, emite C4 e vai para E4'; po='C4 no LD → contador recebe 1'; S.estado=4; S.ciclos++; }
+    else if(S.estado===4){
+      if(semPO){ travar(); return; }
+      if(sBit){ S.estado=1; S.ready=true; S.ciclos++; S.fim=true; pararAuto(); pc='leu S = 1, encerra o laço e volta a E1'; po='nenhum comando: só entregou a condição'; }
+      else { S.z=(S.z&&S.x[S.i-1])?1:0; cmds=['C3']; pc='leu S = 0, emite C3 e vai para E5'; po='porta E: Q AND x'+S.i+' → Z = '+S.z; S.estado=5; S.ciclos++; }
+    }
+    else if(S.estado===5){ cmds=['C2']; if(!semPO) S.i++; pc='em E5, emite C2 e volta para E4'; po='C2 no INC → i = '+S.i; S.estado=4; S.ciclos++; }
+  } else {
+    if(S.estado===2){ cmds=['C1','C4']; if(!semPO){S.z=1;S.i=1;} pc='em E2, emite C1 e C4 no mesmo ciclo'; po='SET e LD juntos: Z = 1 e i = 1'; S.estado=3; S.ciclos++; }
+    else if(S.estado===3){
+      if(semPO){ travar(); return; }
+      if(sBit){ S.estado=1; S.ready=true; S.ciclos++; S.fim=true; pararAuto(); pc='leu S = 1, encerra o laço e volta a E1'; po='nenhum comando: só entregou a condição'; }
+      else { const b=S.x[S.i-1], antes=S.i; S.z=(S.z&&b)?1:0; S.i++; cmds=['C3','C2']; pc='leu S = 0, emite C3 e C2 e permanece em E3'; po='em paralelo: Z = Q AND x'+antes+' = '+S.z+' e i = '+S.i; S.ciclos++; }
+    }
+  }
+  if(semPO) po = 'ausente — ninguém executa ' + (cmds.length?cmds.join(' e '):'nada');
+  S.cmds=cmds; registrar(S.ciclos,pc,po); render();
+}
+
+function aplicar(c){
+  let po='', alerta='';
+  if(c==='C1'){ S.z=1; po='C1 no SET → Z = 1'; }
+  if(c==='C4'){ S.i=1; po='C4 no LD → i = 1'; }
+  if(c==='C2'){
+    if(S.i===null){ alerta='C2 mandou incrementar um contador que nunca foi carregado.'; po='C2 → i continua indefinido'; }
+    else { S.i++; po='C2 no INC → i = '+S.i; }
+  }
+  if(c==='C3'){
+    if(S.z===null||S.i===null){ alerta='C3 carregou a saída da porta E antes de Z ou i existirem: o resultado não significa nada.'; po='C3 → resultado indefinido'; }
+    else if(S.i>S.n){ alerta='C3 leu além de x'+S.n+': a operativa não sabe que o laço já deveria ter acabado.'; po='C3 → leitura fora da faixa'; }
+    else { S.z=(S.z&&S.x[S.i-1])?1:0; po='porta E: Q AND x'+S.i+' → Z = '+S.z; }
+  }
+  S.cmds=[c];
+  registrar('—','(sem controle: comando dado na mão)',po);
+  E('avisoPO').innerHTML = alerta ? '<div class="aviso"><b>Sem sequenciamento.</b> '+alerta+'</div>' : '';
+  render();
+}
+
+function zerar(){
+  pararAuto();
+  S.estado=1;S.i=null;S.z=null;S.ciclos=0;S.ready=true;S.cmds=[];S.start=false;S.fim=false;S.travado=false;S.log=[];
+  E('avisoPO').innerHTML=''; render();
+}
+function linhaAtiva(){
+  const s=S.i!==null&&S.i>S.n;
+  if(S.modo==='5'){ if(S.estado===1) return S.start?'1s':'1n'; if(S.estado===4) return s?'4s':'4n'; return String(S.estado); }
+  if(S.estado===1) return S.start?'1s':'1n';
+  if(S.estado===3) return s?'3s':'3n';
+  return '2';
+}
+function montarBits(){
+  const c=E('bits'); c.innerHTML='';
+  for(let k=0;k<S.n;k++){
+    if(S.x[k]===undefined) S.x[k]=1;
+    const b=document.createElement('button');
+    b.className='bit'; b.setAttribute('aria-pressed',S.x[k]===1);
+    b.innerHTML=S.x[k]+'<small>x'+(k+1)+'</small>';
+    b.onclick=()=>{S.x[k]=S.x[k]?0:1;montarBits();render();};
+    c.appendChild(b);
+  }
+}
+
+function render(){
+  const tab = S.modo==='5'?TAB5:TAB3;
+  const semPO = S.vista==='pc';
+  const semPC = S.vista==='po';
+  const sBit = S.i!==null && S.i>S.n;
+  const leBit = !semPO && S.i!==null && S.i<=S.n;
+
+  E('grafo5').style.display = S.modo==='5'?'':'none';
+  E('grafo3').style.display = S.modo==='3'?'':'none';
+  E('passos5').style.display = S.modo==='5'?'':'none';
+  E('passos3').style.display = S.modo==='3'?'':'none';
+  E('marca5').setAttribute('y', 326 + 20*(S.estado-1));
+  E('marca3').setAttribute('y', 341 + 25*(S.estado-1));
+  [1,2,3,4,5].forEach(k=>{const el=E('e5_'+k); if(el) el.classList.toggle('ativo',S.modo==='5'&&S.estado===k);});
+  [1,2,3].forEach(k=>{const el=E('e3_'+k); if(el) el.classList.toggle('ativo',S.modo==='3'&&S.estado===k);});
+
+  E('lEstado').textContent='E'+S.estado+(S.fim?' ✓':'');
+  E('lCiclos').textContent=S.ciclos;
+  E('lReady').textContent=S.ready?'1':'0';
+  E('txtReady').textContent='= '+(S.ready?'1':'0');
+
+  E('lZ').textContent = semPO?'?':(S.z===null?'—':S.z);
+  E('lZ').className = (semPO||S.z===null)?'q':'po';
+  E('lI').textContent = semPO?'?':(S.i===null?'—':S.i);
+  E('lI').className = (semPO||S.i===null)?'q':'po';
+  E('lS').textContent = semPO?'?':(S.i===null?'—':(sBit?'1':'0'));
+  E('lS').className = (semPO||S.i===null)?'q':'st';
+
+  /* valores nos fios do esquemático */
+  E('vXi').textContent = leBit?S.x[S.i-1]:'—';
+  E('vQ').textContent  = semPO?'?':(S.z===null?'—':S.z);
+  E('vI').textContent  = semPO?'?':(S.i===null?'—':S.i);
+  E('vN').textContent  = 'n = '+S.n;
+  const usaAnd = S.cmds.indexOf('C3')>=0 && leBit;
+  E('vAnd').textContent = usaAnd?S.z:(leBit&&S.z!==null?((S.z&&S.x[S.i-1])?1:0):'—');
+  [['vXi',leBit],['vQ',!semPO&&S.z!==null],['vI',!semPO&&S.i!==null],
+   ['vAnd',leBit&&S.z!==null]].forEach(function(a){
+     E(a[0]).parentNode.classList.toggle('indef',!a[1]);
+   });
+
+  /* fios de comando e de estado */
+  ['C1','C2','C3','C4'].forEach(c=>{
+    const on=S.cmds.indexOf(c)>=0;
+    E('w-'+c).classList.toggle('on',on);
+    E('lamp'+c).textContent=on?'1':'0';
+  });
+  const testando = !semPO && S.i!==null && ((S.modo==='5'&&S.estado===4)||(S.modo==='3'&&S.estado===3));
+  E('w-S').classList.toggle('on',testando);
+  E('lampS').textContent = semPO?'?':(S.i===null?'?':(sBit?'1':'0'));
+  E('dadoZ').classList.toggle('on',S.cmds.indexOf('C3')>=0);
+
+  /* portas acesas */
+  E('gFF').classList.toggle('viva', S.cmds.indexOf('C1')>=0||S.cmds.indexOf('C3')>=0);
+  E('gAnd').classList.toggle('viva', S.cmds.indexOf('C3')>=0);
+  E('gCont').classList.toggle('viva', S.cmds.indexOf('C2')>=0||S.cmds.indexOf('C4')>=0);
+  E('gComp').classList.toggle('viva', testando);
+  document.querySelectorAll('.bit').forEach((b,k)=>b.classList.toggle('lendo', leBit && k===S.i-1));
+
+  /* isolamento */
+  E('grpPC').classList.toggle('apagado',semPC);
+  E('grpPO').classList.toggle('apagado',semPO);
+  E('cardPC').classList.toggle('esmaecido',semPC);
+  E('cardPO').classList.toggle('esmaecido',semPO);
+  E('cmdManual').style.display = semPC?'flex':'none';
+  E('controles').style.display = semPC?'none':'flex';
+  E('explicaVista').innerHTML = TEXTO_VISTA[S.vista];
+  E('avisoPC').innerHTML = S.travado
+    ? '<div class="aviso"><b>Travou.</b> A próxima decisão depende de <code>S = (i &gt; n)</code>, produzido pelo comparador — que está na parte operativa. Sozinha, a parte de controle não avança.</div>'
+    : '';
+
+  const corpo=E('corpoTabela'); corpo.innerHTML='';
+  const alvo=linhaAtiva();
+  tab.forEach(l=>{
+    const tr=document.createElement('tr'); if(l.id===alvo) tr.className='ativa';
+    [l.e,l.c,l.p,l.o,l.s,l.cmd].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});
+    corpo.appendChild(tr);
+  });
+  E('c5').textContent=2*S.n+3; E('c3').textContent=S.n+2;
+  E('custo5').classList.toggle('escolhido',S.modo==='5');
+  E('custo3').classList.toggle('escolhido',S.modo==='3');
+
+  const lg=E('log');
+  if(!S.log.length){ lg.innerHTML='<p class="vazio">Dê um pulso de start e depois avance de relógio em relógio.</p>'; }
+  else{
+    lg.innerHTML='';
+    S.log.forEach(l=>{
+      const d=document.createElement('div'); d.className='linhaLog';
+      const a=document.createElement('div'); a.className='c'; a.textContent=l.c;
+      const b=document.createElement('div'); b.className='a'; b.textContent=l.pc;
+      const c=document.createElement('div'); c.className='b'; c.textContent=l.po;
+      d.appendChild(a); d.appendChild(b); d.appendChild(c); lg.appendChild(d);
+    });
+  }
+  const res=E('resultado');
+  if(S.fim && !semPO){
+    const esperado = S.x.slice(0,S.n).every(function(b){return b===1;}) ? 1 : 0;
+    res.className='resultado ver';
+    res.innerHTML='<b>Z = '+S.z+'</b><span>o E de x1 … x'+S.n+
+      ' — '+(esperado===S.z?'confere':'divergiu')+'</span><b>'+S.ciclos+' ciclos</b>'+
+      '<span>'+(S.modo==='5'?'2n+3, sem otimização':'n+2, com as ações em paralelo')+'</span>';
+  } else { res.className='resultado'; }
+  E('btnStart').disabled = !(S.estado===1 && !S.start);
+  E('btnPasso').disabled = S.travado;
+  E('btnAuto').disabled = S.travado || semPO;
+}
+
+function vista(v){
+  S.vista=v; pararAuto();
+  E('vPC').setAttribute('aria-pressed',v==='pc');
+  E('vPO').setAttribute('aria-pressed',v==='po');
+  E('vTudo').setAttribute('aria-pressed',v==='tudo');
+  zerar();
+}
+E('vPC').onclick=()=>vista('pc');
+E('vPO').onclick=()=>vista('po');
+E('vTudo').onclick=()=>vista('tudo');
+E('btn5').onclick=()=>{S.modo='5';E('btn5').setAttribute('aria-pressed',true);E('btn3').setAttribute('aria-pressed',false);zerar();};
+E('btn3').onclick=()=>{S.modo='3';E('btn3').setAttribute('aria-pressed',true);E('btn5').setAttribute('aria-pressed',false);zerar();};
+E('btnStart').onclick=()=>{S.start=true;render();};
+E('btnPasso').onclick=passo;
+E('btnReset').onclick=zerar;
+E('btnAuto').onclick=()=>{
+  if(S.auto){pararAuto();return;}
+  if(S.estado===1&&!S.start) S.start=true;
+  E('btnAuto').textContent='Parar'; S.auto=setInterval(passo,700);
+};
+document.querySelectorAll('#cmdManual button').forEach(b=>{b.onclick=()=>aplicar(b.dataset.c);});
+document.addEventListener('keydown',ev=>{
+  if(ev.target.tagName==='SELECT') return;
+  if(ev.code==='Space'){ ev.preventDefault(); if(!S.travado && S.vista!=='po') passo(); }
+  if(ev.key==='r'||ev.key==='R') zerar();
+  if(ev.key==='1') vista('pc');
+  if(ev.key==='2') vista('po');
+  if(ev.key==='3') vista('tudo');
+});
+(function(){
+  const s=E('selN');
+  for(let k=2;k<=12;k++){const o=document.createElement('option');o.value=k;o.textContent=k;if(k===6)o.selected=true;s.appendChild(o);}
+  s.onchange=()=>{S.n=+s.value;S.x.length=S.n;montarBits();zerar();};
+})();
+montarBits(); render();
+</script>
+</body>
+</html>
