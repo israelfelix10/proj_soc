@@ -4,10 +4,14 @@ Material de apoio ao seminário sobre o capítulo 4 de *Sistemas digitais: uma v
 
 ## Conteúdo
 
-- `index.html`: demonstração interativa da Parte de Controle e da Parte Operativa.
+- `index.html`: demonstração interativa da Parte de Controle e da Parte Operativa. 
 - `Apresentacao_Capitulo_4.pdf`: apresentação do seminário.
 
 A demonstração permite observar separadamente a Parte de Controle, a Parte Operativa e o sistema completo, além de comparar as organizações com cinco e três estados.
+
+## Acesso a Demonstração
+
+Entre no site https://israelfelix10.github.io/proj_soc/ 
 
 ## Referência
 
